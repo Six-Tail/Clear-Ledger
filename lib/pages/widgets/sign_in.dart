@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class SignIn extends StatefulWidget {
-  final PageController pageController; // Add this line
+  final PageController pageController;
 
-  const SignIn({super.key, required this.pageController}); // Modify the constructor
+  const SignIn({super.key, required this.pageController});
 
   @override
   _SignInState createState() => _SignInState();
