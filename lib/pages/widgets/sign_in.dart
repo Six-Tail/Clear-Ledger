@@ -1,7 +1,14 @@
+import 'package:clear_ledger/pages/main_page.dart';
 import 'package:clear_ledger/theme.dart';
 import 'package:clear_ledger/widgets/snackbar.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:get/get.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SignIn extends StatefulWidget {
   final PageController pageController;
@@ -21,6 +28,8 @@ class _SignInState extends State<SignIn> {
   final FocusNode focusNodePassword = FocusNode();
 
   bool _obscureTextPassword = true;
+  bool isLoginAttempt = false;
+  bool isLoggedIn = false;
 
   @override
   void dispose() {
@@ -285,8 +294,9 @@ class _SignInState extends State<SignIn> {
               Padding(
                 padding: const EdgeInsets.only(top: 10.0),
                 child: GestureDetector(
-                  onTap: () => CustomSnackBar(
-                      context, const Text('Google Button Pressed')),
+                  onTap: () async {
+                    await signInWithGoogle();
+                  },
                   child: Container(
                     padding: const EdgeInsets.all(15.0),
                     decoration: const BoxDecoration(
@@ -307,6 +317,25 @@ class _SignInState extends State<SignIn> {
     );
   }
 
+  void navigatorToMainPage() {
+    Get.off(() => const MainPage());
+  }
+
+  Future<void> saveUserToFirestore(String uid, String? name, String? profileImage, String accountType) async {
+    final userRef = FirebaseFirestore.instance.collection('users').doc(uid);
+
+    await userRef.set({
+      'userName': name ?? '',
+      'userImage': profileImage ?? '',
+      'accountType': accountType,
+      'createdAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true)); // merge: true 옵션 추가
+
+    if (kDebugMode) {
+      print("사용자 정보가 Firestore에 저장되었습니다.");
+    }
+  }
+
   void _toggleLogin() {
     setState(() {
       _obscureTextPassword = !_obscureTextPassword;
@@ -316,4 +345,51 @@ class _SignInState extends State<SignIn> {
   void _toggleSignInButton() {
     CustomSnackBar(context, const Text('Signin Button Pressed'));
   }
+
+  Future<void> signInWithGoogle() async {
+    setState(() {
+      isLoginAttempt = true;
+    });
+    try {
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
+      if (googleAuth == null) {
+        setState(() {
+          isLoginAttempt = false;
+        });
+        return;
+      }
+      final credential = firebase_auth.GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+      await firebase_auth.FirebaseAuth.instance.signInWithCredential(credential);
+      await _saveLoginState();
+
+      final firebase_auth.User? user = firebase_auth.FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await saveUserToFirestore(user.uid, user.displayName, user.photoURL, "Google 계정");
+        if (kDebugMode) {
+          print('구글 계정 FireStore저장 성공');
+        }
+      }
+      navigatorToMainPage();
+    } catch (error) {
+      if (kDebugMode) {
+        print('Google 로그인 실패 $error');
+      }
+    }
+  }
+
+  Future<void> _saveLoginState() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', true);
+  }
+
+  Future<void> signOut() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', false);
+    await firebase_auth.FirebaseAuth.instance.signOut();
+  }
+
 }
