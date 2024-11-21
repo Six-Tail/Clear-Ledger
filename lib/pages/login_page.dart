@@ -96,7 +96,7 @@ class _LoginPageState extends State<LoginPage>
                     ),
                     ConstrainedBox(
                       constraints: const BoxConstraints.expand(),
-                      child: const SignUp(),
+                      child: SignUp(pageController: _pageController),
                     ),
                   ],
                 ),
