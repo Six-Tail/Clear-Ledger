@@ -1,2 +1,3 @@
-**/** linguist-documentation=false
-**/** linguist-vendored=false
+* linguist-documentation=false
+lib/* linguist-vendored=false
+repo:github/linguist OR repo:github/fetch filename:.gitattributes linguist-documentation
