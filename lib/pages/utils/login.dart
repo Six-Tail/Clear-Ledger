@@ -36,6 +36,7 @@ Future<void> signInWithGoogle() async {
         user.uid,
         user.displayName,
         user.photoURL,
+        user.email,
         "Google 계정",
       );
     }
@@ -67,6 +68,7 @@ Future<void> signInWithGitHub() async {
         user.uid,
         user.displayName,
         user.photoURL,
+        user.email,
         "GitHub 계정",
       );
     }
