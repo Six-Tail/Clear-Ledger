@@ -1,13 +1,14 @@
 import 'package:clear_ledger/pages/widgets/add_transaction_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 
 import '../services/user_service.dart';
 import 'package:clear_ledger/pages/widgets/income_expense_box.dart';
 import 'package:clear_ledger/pages/utils/logout.dart';
-import 'package:clear_ledger/pages/widgets/menu_widget.dart'; // MenuWidget을 import합니다.
+import 'package:clear_ledger/pages/widgets/menu_widget.dart';
+
+import 'add_transaction_form.dart'; // MenuWidget을 import합니다.
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -28,7 +29,8 @@ class MainPageState extends State<MainPage> {
 
   bool _isAddingTransaction = false;
 
-  final ScrollController _scrollController = ScrollController(); // ScrollController 추가
+  final ScrollController _scrollController =
+      ScrollController(); // ScrollController 추가
 
   void _addTransaction() {
     setState(() {
@@ -141,7 +143,8 @@ class MainPageState extends State<MainPage> {
         ),
         backgroundColor: Colors.white,
         body: SingleChildScrollView(
-          controller: _scrollController, // ScrollController를 SingleChildScrollView에 연결
+          controller: _scrollController,
+          // ScrollController를 SingleChildScrollView에 연결
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -206,192 +209,11 @@ class MainPageState extends State<MainPage> {
                 const SizedBox(height: 40),
                 const Divider(
                     height: 2, thickness: 10, color: Color(0xFFD3D4D7)),
-                if (_isAddingTransaction) ...[
-                  Container(
-                    height: 300,
-                    // 높이를 기존보다 늘려 날짜 입력 필드를 포함
-                    width: double.infinity,
-                    color: Colors.white,
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          '새로운 거래',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Container(
-                          width: 340,
-                          height: 1,
-                          color: Colors.grey[300], // 밑줄 색상 설정
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          '날짜',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Flexible(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[200], // 배경색 설정
-                                  borderRadius: BorderRadius.circular(8.0), // 배경 둥글게 설정
-                                ),
-                                child: TextField(
-                                  textAlign: TextAlign.center, // 텍스트 가운데 정렬
-                                  decoration: InputDecoration(
-                                    hintText: '2000',
-                                    border: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey, // 테두리 색상
-                                        width: 1.0, // 테두리 두께 조정
-                                      ),
-                                      borderRadius: BorderRadius.circular(10.0), // 테두리 둥글게 설정
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey, // 테두리 색상
-                                        width: 1.0, // 테두리 두께 조정
-                                      ),
-                                      borderRadius: BorderRadius.circular(10.0), // 테두리 둥글게 설정
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey, // 테두리 색상 (포커스 상태)
-                                        width: 1.0, // 테두리 두께 유지
-                                      ),
-                                      borderRadius: BorderRadius.circular(10.0), // 테두리 둥글게 설정
-                                    ),// 입력 필드 크기 줄이기
-                                    filled: true, // 배경색 활성화
-                                    fillColor: Colors.grey[200], // 배경색 설정
-                                  ),
-                                  keyboardType: TextInputType.number, // 숫자 키보드
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly, // 숫자만 허용
-                                    LengthLimitingTextInputFormatter(4), // 4자리로 제한
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Flexible(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[200], // 배경색 설정
-                                  borderRadius: BorderRadius.circular(8.0), // 배경 둥글게 설정
-                                ),
-                                child: TextField(
-                                  textAlign: TextAlign.center, // 텍스트 가운데 정렬
-                                  decoration: InputDecoration(
-                                    hintText: '01',
-                                    border: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey, // 테두리 색상
-                                        width: 1.0, // 테두리 두께 조정
-                                      ),
-                                      borderRadius: BorderRadius.circular(10.0), // 테두리 둥글게 설정
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey, // 테두리 색상
-                                        width: 1.0, // 테두리 두께 조정
-                                      ),
-                                      borderRadius: BorderRadius.circular(10.0), // 테두리 둥글게 설정
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey, // 테두리 색상 (포커스 상태)
-                                        width: 1.0, // 테두리 두께 유지
-                                      ),
-                                      borderRadius: BorderRadius.circular(10.0), // 테두리 둥글게 설정
-                                    ),// 입력 필드 크기 줄이기
-                                    filled: true, // 배경색 활성화
-                                    fillColor: Colors.grey[200], // 배경색 설정
-                                  ),
-                                  keyboardType: TextInputType.number, // 숫자 키보드
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly, // 숫자만 허용
-                                    LengthLimitingTextInputFormatter(2), // 4자리로 제한
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Flexible(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[200], // 배경색 설정
-                                  borderRadius: BorderRadius.circular(8.0), // 배경 둥글게 설정
-                                ),
-                                child: TextField(
-                                  textAlign: TextAlign.center, // 텍스트 가운데 정렬
-                                  decoration: InputDecoration(
-                                    hintText: '01',
-                                    border: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey, // 테두리 색상
-                                        width: 1.0, // 테두리 두께 조정
-                                      ),
-                                      borderRadius: BorderRadius.circular(10.0), // 테두리 둥글게 설정
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey, // 테두리 색상
-                                        width: 1.0, // 테두리 두께 조정
-                                      ),
-                                      borderRadius: BorderRadius.circular(10.0), // 테두리 둥글게 설정
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey, // 테두리 색상 (포커스 상태)
-                                        width: 1.0, // 테두리 두께 유지
-                                      ),
-                                      borderRadius: BorderRadius.circular(10.0), // 테두리 둥글게 설정
-                                    ),// 입력 필드 크기 줄이기
-                                    filled: true, // 배경색 활성화
-                                    fillColor: Colors.grey[200], // 배경색 설정
-                                  ),
-                                  keyboardType: TextInputType.number, // 숫자 키보드
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly, // 숫자만 허용
-                                    LengthLimitingTextInputFormatter(2), // 4자리로 제한
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Spacer(), // 남은 공간을 채워 닫기 버튼을 아래로 정렬
-                        Align(
-                          alignment: Alignment.bottomCenter,
-                          child: TextButton(
-                            onPressed: _closeTransaction,
-                            child: const Text(
-                              '닫기',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 16,
-                                fontFamily: 'Hana2Medium',
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                // 새로운 거래 창을 _isAddingTransaction이 true일 때만 표시
+                if (_isAddingTransaction)
+                  AddTransactionForm(
+                    onCloseTransaction: _closeTransaction,
                   ),
-                ],
               ],
             ),
           ),
