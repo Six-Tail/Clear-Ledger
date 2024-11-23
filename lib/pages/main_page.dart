@@ -1,5 +1,6 @@
 import 'package:clear_ledger/pages/widgets/add_transaction_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 
@@ -12,10 +13,10 @@ class MainPage extends StatefulWidget {
   const MainPage({super.key});
 
   @override
-  _MainPageState createState() => _MainPageState();
+  MainPageState createState() => MainPageState();
 }
 
-class _MainPageState extends State<MainPage> {
+class MainPageState extends State<MainPage> {
   String userName = '';
   int asset = 0;
   final UserService _userService = UserService();
@@ -27,9 +28,21 @@ class _MainPageState extends State<MainPage> {
 
   bool _isAddingTransaction = false;
 
+  final ScrollController _scrollController = ScrollController(); // ScrollController 추가
+
   void _addTransaction() {
     setState(() {
       _isAddingTransaction = true; // 새로운 거래 창 열기
+    });
+
+    // 렌더링 후 스크롤을 아래로 이동시키기 위해 addPostFrameCallback 사용
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // 화면이 렌더링 된 후 스크롤을 끝으로 이동
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent, // 화면 끝으로 이동
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     });
   }
 
@@ -128,6 +141,7 @@ class _MainPageState extends State<MainPage> {
         ),
         backgroundColor: Colors.white,
         body: SingleChildScrollView(
+          controller: _scrollController, // ScrollController를 SingleChildScrollView에 연결
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -146,7 +160,7 @@ class _MainPageState extends State<MainPage> {
                       : '사용자 정보를 가져오는 중입니다...',
                   textAlign: TextAlign.center,
                   style:
-                  const TextStyle(fontSize: 18, fontFamily: 'Hana2Regular'),
+                      const TextStyle(fontSize: 18, fontFamily: 'Hana2Regular'),
                 ),
                 const SizedBox(height: 20),
                 // 애니메이션 적용된 자산 값 출력
@@ -194,9 +208,10 @@ class _MainPageState extends State<MainPage> {
                     height: 2, thickness: 10, color: Color(0xFFD3D4D7)),
                 if (_isAddingTransaction) ...[
                   Container(
-                    height: 200,
+                    height: 300,
+                    // 높이를 기존보다 늘려 날짜 입력 필드를 포함
                     width: double.infinity,
-                    color: Colors.grey[200],
+                    color: Colors.white,
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -215,11 +230,162 @@ class _MainPageState extends State<MainPage> {
                           height: 1,
                           color: Colors.grey[300], // 밑줄 색상 설정
                         ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          '날짜',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Flexible(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200], // 배경색 설정
+                                  borderRadius: BorderRadius.circular(8.0), // 배경 둥글게 설정
+                                ),
+                                child: TextField(
+                                  textAlign: TextAlign.center, // 텍스트 가운데 정렬
+                                  decoration: InputDecoration(
+                                    hintText: '2000',
+                                    border: OutlineInputBorder(
+                                      borderSide: const BorderSide(
+                                        color: Colors.grey, // 테두리 색상
+                                        width: 1.0, // 테두리 두께 조정
+                                      ),
+                                      borderRadius: BorderRadius.circular(10.0), // 테두리 둥글게 설정
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderSide: const BorderSide(
+                                        color: Colors.grey, // 테두리 색상
+                                        width: 1.0, // 테두리 두께 조정
+                                      ),
+                                      borderRadius: BorderRadius.circular(10.0), // 테두리 둥글게 설정
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderSide: const BorderSide(
+                                        color: Colors.grey, // 테두리 색상 (포커스 상태)
+                                        width: 1.0, // 테두리 두께 유지
+                                      ),
+                                      borderRadius: BorderRadius.circular(10.0), // 테두리 둥글게 설정
+                                    ),// 입력 필드 크기 줄이기
+                                    filled: true, // 배경색 활성화
+                                    fillColor: Colors.grey[200], // 배경색 설정
+                                  ),
+                                  keyboardType: TextInputType.number, // 숫자 키보드
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly, // 숫자만 허용
+                                    LengthLimitingTextInputFormatter(4), // 4자리로 제한
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Flexible(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200], // 배경색 설정
+                                  borderRadius: BorderRadius.circular(8.0), // 배경 둥글게 설정
+                                ),
+                                child: TextField(
+                                  textAlign: TextAlign.center, // 텍스트 가운데 정렬
+                                  decoration: InputDecoration(
+                                    hintText: '01',
+                                    border: OutlineInputBorder(
+                                      borderSide: const BorderSide(
+                                        color: Colors.grey, // 테두리 색상
+                                        width: 1.0, // 테두리 두께 조정
+                                      ),
+                                      borderRadius: BorderRadius.circular(10.0), // 테두리 둥글게 설정
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderSide: const BorderSide(
+                                        color: Colors.grey, // 테두리 색상
+                                        width: 1.0, // 테두리 두께 조정
+                                      ),
+                                      borderRadius: BorderRadius.circular(10.0), // 테두리 둥글게 설정
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderSide: const BorderSide(
+                                        color: Colors.grey, // 테두리 색상 (포커스 상태)
+                                        width: 1.0, // 테두리 두께 유지
+                                      ),
+                                      borderRadius: BorderRadius.circular(10.0), // 테두리 둥글게 설정
+                                    ),// 입력 필드 크기 줄이기
+                                    filled: true, // 배경색 활성화
+                                    fillColor: Colors.grey[200], // 배경색 설정
+                                  ),
+                                  keyboardType: TextInputType.number, // 숫자 키보드
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly, // 숫자만 허용
+                                    LengthLimitingTextInputFormatter(2), // 4자리로 제한
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Flexible(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200], // 배경색 설정
+                                  borderRadius: BorderRadius.circular(8.0), // 배경 둥글게 설정
+                                ),
+                                child: TextField(
+                                  textAlign: TextAlign.center, // 텍스트 가운데 정렬
+                                  decoration: InputDecoration(
+                                    hintText: '01',
+                                    border: OutlineInputBorder(
+                                      borderSide: const BorderSide(
+                                        color: Colors.grey, // 테두리 색상
+                                        width: 1.0, // 테두리 두께 조정
+                                      ),
+                                      borderRadius: BorderRadius.circular(10.0), // 테두리 둥글게 설정
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderSide: const BorderSide(
+                                        color: Colors.grey, // 테두리 색상
+                                        width: 1.0, // 테두리 두께 조정
+                                      ),
+                                      borderRadius: BorderRadius.circular(10.0), // 테두리 둥글게 설정
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderSide: const BorderSide(
+                                        color: Colors.grey, // 테두리 색상 (포커스 상태)
+                                        width: 1.0, // 테두리 두께 유지
+                                      ),
+                                      borderRadius: BorderRadius.circular(10.0), // 테두리 둥글게 설정
+                                    ),// 입력 필드 크기 줄이기
+                                    filled: true, // 배경색 활성화
+                                    fillColor: Colors.grey[200], // 배경색 설정
+                                  ),
+                                  keyboardType: TextInputType.number, // 숫자 키보드
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly, // 숫자만 허용
+                                    LengthLimitingTextInputFormatter(2), // 4자리로 제한
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Spacer(), // 남은 공간을 채워 닫기 버튼을 아래로 정렬
                         Align(
                           alignment: Alignment.bottomCenter,
-                          child: ElevatedButton(
+                          child: TextButton(
                             onPressed: _closeTransaction,
-                            child: const Text('닫기'),
+                            child: const Text(
+                              '닫기',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 16,
+                                fontFamily: 'Hana2Medium',
+                              ),
+                            ),
                           ),
                         ),
                       ],
