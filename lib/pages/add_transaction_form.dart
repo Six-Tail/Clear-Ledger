@@ -1,17 +1,24 @@
 import 'package:clear_ledger/pages/widgets/custom_text_field.dart';
+import 'package:clear_ledger/services/user_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class AddTransactionForm extends StatefulWidget {
   final VoidCallback onCloseTransaction;
+  final VoidCallback onTransactionAdded; // 거래 추가 후 호출될 콜백
 
-  const AddTransactionForm({super.key, required this.onCloseTransaction});
+  const AddTransactionForm({super.key, required this.onCloseTransaction, required this.onTransactionAdded});
 
   @override
   State<AddTransactionForm> createState() => _AddTransactionFormState();
 }
 
 class _AddTransactionFormState extends State<AddTransactionForm> {
+  final UserService _userService = UserService();
+
   String? selectedTransactionType;
   final TextEditingController contentController = TextEditingController();
   final TextEditingController yearController = TextEditingController();
@@ -28,14 +35,14 @@ class _AddTransactionFormState extends State<AddTransactionForm> {
   int getMaxDays(int month, int year) {
     switch (month) {
       case 2:
-        return isLeapYear(year) ? 29 : 28;  // 2월은 윤년에 따라 다름
+        return isLeapYear(year) ? 29 : 28; // 2월은 윤년에 따라 다름
       case 4:
       case 6:
       case 9:
       case 11:
-        return 30;  // 30일이 있는 달
+        return 30; // 30일이 있는 달
       default:
-        return 31;  // 31일이 있는 달
+        return 31; // 31일이 있는 달
     }
   }
 
@@ -55,6 +62,97 @@ class _AddTransactionFormState extends State<AddTransactionForm> {
         day >= 1 && day <= getMaxDays(month, year);
   }
 
+  Future<void> _submitTransaction() async {
+    try {
+      // 입력 데이터
+      final year = int.tryParse(yearController.text) ?? 0;
+      final month = int.tryParse(monthController.text) ?? 0;
+      final day = int.tryParse(dayController.text) ?? 0;
+      final content = contentController.text;
+      final amount = int.tryParse(amountController.text) ?? 0;
+      final transactionType = selectedTransactionType;
+
+      // 현재 사용자 정보 가져오기
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user == null) {
+        throw Exception("사용자가 로그인되지 않았습니다.");
+      }
+
+      // 키보드 닫기
+      FocusScope.of(context).unfocus();
+
+      // Firestore에 거래 추가
+      await _userService.firestore.collection('trade').add({
+        'userId': user.uid,
+        'date': DateTime(year, month, day),
+        'content': content,
+        'amount': amount,
+        'type': transactionType,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // 자산 업데이트
+      await _updateUserAsset(user.uid, amount, transactionType);
+
+      // 성공 메시지 출력
+      if (kDebugMode) {
+        print('거래가 성공적으로 추가되었습니다: $content, $amount, $transactionType');
+      }
+
+      // 폼 초기화 및 화면 새로고침
+      _resetForm();
+      setState(() {}); // 화면을 새로고침
+
+      // 거래가 추가된 후 onTransactionAdded 호출
+      widget.onTransactionAdded();
+
+    } catch (e) {
+      // 에러 메시지 출력
+      if (kDebugMode) {
+        print('거래 추가 중 에러 발생: $e');
+      }
+    }
+  }
+
+  Future<void> _updateUserAsset(String userId, int amount, String? transactionType) async {
+    try {
+      // 사용자 자산 정보 가져오기
+      final userDoc = await _userService.firestore.collection('users').doc(userId).get();
+      if (userDoc.exists) {
+        // 기존 자산 정보
+        final currentAsset = userDoc.data()?['asset'] ?? 0;
+
+        // 거래 종류에 따라 자산 업데이트
+        int updatedAsset = (transactionType == 'income') ? currentAsset + amount : currentAsset - amount;
+
+        // 자산 업데이트
+        await _userService.firestore.collection('users').doc(userId).update({
+          'asset': updatedAsset,
+        });
+
+        if (kDebugMode) {
+          print('자산 업데이트 완료: $updatedAsset');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('자산 업데이트 중 에러 발생: $e');
+      }
+    }
+  }
+
+  void _resetForm() {
+    contentController.clear();
+    yearController.clear();
+    monthController.clear();
+    dayController.clear();
+    amountController.clear();
+    setState(() {
+      selectedTransactionType = null;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -69,6 +167,16 @@ class _AddTransactionFormState extends State<AddTransactionForm> {
 
   void _validateForm() {
     setState(() {}); // 값이 변경될 때마다 상태를 다시 빌드하여 유효성 검사 결과를 반영
+  }
+
+  @override
+  void dispose() {
+    contentController.dispose();
+    yearController.dispose();
+    monthController.dispose();
+    dayController.dispose();
+    amountController.dispose();
+    super.dispose();
   }
 
   @override
@@ -314,11 +422,7 @@ class _AddTransactionFormState extends State<AddTransactionForm> {
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: isFormValid
-                    ? () {
-                  // 버튼 클릭 시 처리
-                }
-                    : null,  // 버튼이 비활성화 될 때는 null 처리
+                onPressed: isFormValid ? _submitTransaction : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF008AB2),
                   foregroundColor: Colors.white,
@@ -355,15 +459,5 @@ class _AddTransactionFormState extends State<AddTransactionForm> {
         ],
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    contentController.dispose();
-    yearController.dispose();
-    monthController.dispose();
-    dayController.dispose();
-    amountController.dispose();
-    super.dispose();
   }
 }

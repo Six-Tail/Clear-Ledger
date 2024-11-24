@@ -1,4 +1,6 @@
 import 'package:clear_ledger/pages/widgets/add_transaction_widget.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
@@ -19,12 +21,11 @@ class MainPage extends StatefulWidget {
 
 class MainPageState extends State<MainPage> {
   String userName = '';
-  int asset = 0;
   final UserService _userService = UserService();
 
-  int incomingAmount = 980000; // 들어온 돈 (예시 값)
-  int outcomingAmount = 110000; // 나간 돈 (예시 값)
-
+  int asset = 0;
+  int incomingAmount = 0; // 들어온 돈
+  int outcomingAmount = 0; // 나간 돈
   int selectedIndex = 0;
 
   bool _isAddingTransaction = false;
@@ -39,18 +40,26 @@ class MainPageState extends State<MainPage> {
 
     // 렌더링 후 스크롤을 아래로 이동시키기 위해 addPostFrameCallback 사용
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // 화면이 렌더링 된 후 스크롤을 끝으로 이동
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent, // 화면 끝으로 이동
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      // 화면 렌더링 후 스크롤을 끝으로 이동
+      Future.delayed(const Duration(milliseconds: 100), () {
+        _scrollToBottom();  // _scrollToBottom() 함수 호출
+      });
     });
   }
 
   void _closeTransaction() {
     setState(() {
       _isAddingTransaction = false; // 새로운 거래 창 닫기
+    });
+
+    // 렌더링 후 스크롤을 맨 위로 이동시키기 위해 addPostFrameCallback 사용
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // 화면 렌더링 후 스크롤을 끝으로 이동
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (_scrollController.hasClients) {  // ScrollController가 연결된 경우에만
+          _scrollToTop();
+        }
+      });
     });
   }
 
@@ -64,7 +73,7 @@ class MainPageState extends State<MainPage> {
     String? fetchedName = await _userService.fetchUserName();
     int? fetchedAssetValue = await _userService.fetchUserAssetValue();
 
-    if (mounted) {
+    if (mounted) {  // 위젯이 여전히 트리에 있을 때만 setState 호출
       setState(() {
         userName = fetchedName ?? '';
         asset = fetchedAssetValue ?? 0;
@@ -72,10 +81,14 @@ class MainPageState extends State<MainPage> {
 
       // 자산 계산 (incomingAmount - outcomingAmount)
       int newAssetValue = incomingAmount - outcomingAmount;
-      setState(() {
-        asset = newAssetValue;
-      });
+      if (mounted) {
+        setState(() {
+          asset = newAssetValue;
+        });
+      }
 
+      // 업데이트된 수입과 지출 금액을 계산하기
+      await _updateAmounts();
       // Firebase에 자산 값 업데이트
       await _userService.updateUserAssetValue(incomingAmount, outcomingAmount);
     }
@@ -93,19 +106,194 @@ class MainPageState extends State<MainPage> {
     });
   }
 
-  // 메뉴별 내용을 반환하는 함수
-  Widget _buildMenuContent() {
-    if (selectedIndex == 0) {
-      // 전체 내역 내용
-      return const Text('내역이 없습니다', style: TextStyle(fontSize: 16));
-    } else if (selectedIndex == 1) {
-      // 수입 내용
-      return const Text('내역이 없습니다', style: TextStyle(fontSize: 16));
-    } else if (selectedIndex == 2) {
-      // 지출 내용
-      return const Text('내역이 없습니다', style: TextStyle(fontSize: 16));
+  // _updateAmounts 함수 수정
+  Future<void> _updateAmounts() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final oneMonthAgo = getOneMonthAgo();
+
+    final transactionsSnapshot = await FirebaseFirestore.instance
+        .collection('trade')
+        .where('userId', isEqualTo: user.uid)
+        .where('date', isGreaterThanOrEqualTo: oneMonthAgo)
+        .get();
+
+    int incomeSum = 0;
+    int expenseSum = 0;
+
+    for (var doc in transactionsSnapshot.docs) {
+      final type = doc['type'];
+      final amount = doc['amount'] as int;
+
+      if (type == 'income') {
+        incomeSum += amount;
+      } else if (type == 'expense') {
+        expenseSum += amount;
+      }
     }
-    return const SizedBox.shrink();
+
+    setState(() {
+      incomingAmount = incomeSum; // 수입 금액 업데이트
+      outcomingAmount = expenseSum; // 지출 금액 업데이트
+      asset = incomingAmount - outcomingAmount; // 자산 계산
+    });
+  }
+
+  // 1개월 전의 날짜를 계산하는 함수
+  DateTime getOneMonthAgo() {
+    final now = DateTime.now();
+    final oneMonthAgo = now.subtract(const Duration(days: 30)); // 1개월 전 날짜
+    return oneMonthAgo;
+  }
+
+  // 거래 추가 후 자산 갱신
+  Future<void> _updateAssetAfterTransaction() async {
+    await _updateAmounts();
+    // Firebase에 자산 값 업데이트
+    await _userService.updateUserAssetValue(incomingAmount, outcomingAmount);
+
+    // 자산 갱신 후 스크롤을 맨 위로 이동
+    _scrollToTop();
+  }
+
+// 스크롤을 맨 위로 이동시키는 함수
+  void _scrollToTop() {
+    _scrollController.animateTo(
+      0.0, // 화면의 맨 위로 이동
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _scrollToBottom() {
+    _scrollController.animateTo(
+      _scrollController.position.maxScrollExtent, // 화면의 맨 아래로 이동
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+
+  Stream<QuerySnapshot> getTransactions() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return const Stream.empty();
+    }
+
+    final oneMonthAgo = getOneMonthAgo(); // 1개월 전 날짜 가져오기
+
+    if (selectedIndex == 0) {
+      return FirebaseFirestore.instance
+          .collection('trade')
+          .where('userId', isEqualTo: user.uid)
+          .where('date', isGreaterThanOrEqualTo: oneMonthAgo) // 1개월 전 이후의 데이터만
+          .orderBy('date', descending: true) // 날짜를 기준으로 내림차순 정렬
+          .orderBy('createdAt', descending: true) // 등록된 날짜 순으로 내림차순 정렬
+          .snapshots();
+    } else if (selectedIndex == 1) {
+      return FirebaseFirestore.instance
+          .collection('trade')
+          .where('userId', isEqualTo: user.uid)
+          .where('type', isEqualTo: 'income')
+          .where('date', isGreaterThanOrEqualTo: oneMonthAgo) // 1개월 전 이후의 데이터만
+          .orderBy('date', descending: true) // 날짜를 기준으로 내림차순 정렬
+          .orderBy('createdAt', descending: true) // 등록된 날짜 순으로 내림차순 정렬
+          .snapshots();
+    } else {
+      return FirebaseFirestore.instance
+          .collection('trade')
+          .where('userId', isEqualTo: user.uid)
+          .where('type', isEqualTo: 'expense')
+          .where('date', isGreaterThanOrEqualTo: oneMonthAgo) // 1개월 전 이후의 데이터만
+          .orderBy('date', descending: true) // 날짜를 기준으로 내림차순 정렬
+          .orderBy('createdAt', descending: true) // 등록된 날짜 순으로 내림차순 정렬
+          .snapshots();
+    }
+  }
+
+  Widget _buildMenuContent() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: getTransactions(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return const Center(child: Text('오류가 발생했습니다.'));
+        }
+
+        final transactions = snapshot.data?.docs ?? [];
+
+        if (transactions.isEmpty) {
+          return const Center(child: Text('등록된 거래 내역이 없습니다.'));
+        }
+
+        return SingleChildScrollView(  // 스크롤이 가능한 영역으로 ListView.builder 감쌈
+          child: Column(
+            children: [
+              ListView.builder(
+                shrinkWrap: true,  // ListView의 크기를 자식에 맞게 조정
+                physics: const NeverScrollableScrollPhysics(),  // ListView에서 자체 스크롤을 막음
+                itemCount: transactions.length,
+                itemBuilder: (context, index) {
+                  final transaction = transactions[index];
+                  final date = (transaction['date'] as Timestamp).toDate();
+                  final content = transaction['content'];
+                  final amount = transaction['amount'];
+                  final type = transaction['type'];
+
+                  // 금액의 색상과 부호 결정
+                  Color amountColor = type == 'income' ? Colors.green : Colors.red;
+                  String amountPrefix = type == 'income' ? '+' : '-';
+
+                  return Container(
+                    margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 22.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10.0),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 4.0,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.all(10.0),
+                      title: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            DateFormat('yyyy-MM-dd').format(date),
+                            style: const TextStyle(fontSize: 14.0, color: Colors.grey),
+                          ),
+                          const SizedBox(height: 2.0),
+                          Text(
+                            content,
+                            style: const TextStyle(fontSize: 16.0, fontFamily: 'Hana2Bold'),
+                          ),
+                        ],
+                      ),
+                      trailing: Text(
+                        '$amountPrefix${formatAssetValue(amount)}',  // 금액 포맷팅
+                        style: TextStyle(
+                          fontSize: 18.0,
+                          fontFamily: 'Hana2Bold',
+                          color: amountColor, // 금액의 색상 설정
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -205,7 +393,12 @@ class MainPageState extends State<MainPage> {
                 // 메뉴 선택에 따른 내용 출력
                 _buildMenuContent(),
                 const SizedBox(height: 20),
-                AddTransactionWidget(onAddTransaction: _addTransaction),
+                AddTransactionWidget(
+                  onAddTransaction: () async {
+                    // 거래 추가 창 열기
+                    _addTransaction();
+                  },
+                ),
                 const SizedBox(height: 40),
                 const Divider(
                     height: 2, thickness: 10, color: Color(0xFFD3D4D7)),
@@ -213,6 +406,7 @@ class MainPageState extends State<MainPage> {
                 if (_isAddingTransaction)
                   AddTransactionForm(
                     onCloseTransaction: _closeTransaction,
+                    onTransactionAdded: _updateAssetAfterTransaction, // 거래 추가 후 자산 갱신
                   ),
               ],
             ),
