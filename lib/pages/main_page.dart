@@ -1,6 +1,7 @@
 import 'package:clear_ledger/pages/widgets/add_transaction_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
@@ -21,6 +22,45 @@ class MainPage extends StatefulWidget {
 
 class MainPageState extends State<MainPage> {
   String userName = '';
+  String selectedMonth = DateFormat('yyyy년 MM월').format(DateTime.now()); // 현재 년도와 월
+  DateTime selectedDate = DateTime.now(); // 현재 날짜를 기본값으로 설정
+
+  // 현재 년도와 월을 가져오는 코드
+  String getFormattedDate(DateTime date) {
+    return DateFormat('yyyy년 MM월').format(date);
+  }
+
+  // 년도와 월만 선택하는 함수 (CupertinoDatePicker 사용)
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showModalBottomSheet<DateTime>(
+      context: context,
+      builder: (BuildContext context) {
+        return SizedBox(
+          height: 250,
+          child: CupertinoDatePicker(
+            mode: CupertinoDatePickerMode.date, // 여전히 date 모드를 사용
+            initialDateTime: selectedDate,
+            onDateTimeChanged: (DateTime newDate) {
+              setState(() {
+                selectedDate = DateTime(newDate.year, newDate.month, 1); // 일자는 항상 1일로 설정
+                selectedMonth = getFormattedDate(selectedDate); // 선택된 월과 년도 업데이트
+              });
+            },
+            minimumDate: DateTime(2020),
+            maximumDate: DateTime(2100),
+          ),
+        );
+      },
+    );
+
+    if (picked != null && picked != selectedDate) {
+      setState(() {
+        selectedDate = DateTime(picked.year, picked.month, 1); // 선택된 년도와 월만 반영, 일자는 1일로 설정
+        selectedMonth = getFormattedDate(selectedDate); // 선택된 월과 년도 업데이트
+      });
+    }
+  }
+
   final UserService _userService = UserService();
 
   int asset = 0;
@@ -31,7 +71,7 @@ class MainPageState extends State<MainPage> {
   bool _isAddingTransaction = false;
 
   final ScrollController _scrollController =
-      ScrollController(); // ScrollController 추가
+  ScrollController(); // ScrollController 추가
 
   void _addTransaction() {
     setState(() {
@@ -174,7 +214,6 @@ class MainPageState extends State<MainPage> {
     );
   }
 
-
   Stream<QuerySnapshot> getTransactions() {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -234,55 +273,101 @@ class MainPageState extends State<MainPage> {
           child: Column(
             children: [
               ListView.builder(
-                shrinkWrap: true,  // ListView의 크기를 자식에 맞게 조정
-                physics: const NeverScrollableScrollPhysics(),  // ListView에서 자체 스크롤을 막음
+                shrinkWrap: true, // ListView의 크기를 자식에 맞게 조정
+                physics: const NeverScrollableScrollPhysics(), // ListView에서 자체 스크롤을 막음
                 itemCount: transactions.length,
                 itemBuilder: (context, index) {
                   final transaction = transactions[index];
+                  final transactionId = transaction.id; // 삭제를 위해 문서 ID 저장
                   final date = (transaction['date'] as Timestamp).toDate();
                   final content = transaction['content'];
                   final amount = transaction['amount'];
                   final type = transaction['type'];
 
                   // 금액의 색상과 부호 결정
-                  Color amountColor = type == 'income' ? Colors.green : Colors.red;
+                  Color amountColor = type == 'income' ? const Color(0xFF39A063) : const Color(0xFFD90021);
                   String amountPrefix = type == 'income' ? '+' : '-';
 
-                  return Container(
-                    margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 22.0),
-                    decoration: BoxDecoration(
+                  return Dismissible(
+                    key: Key(transactionId), // 고유 키 설정
+                    direction: DismissDirection.endToStart, // 오른쪽에서 왼쪽으로 스와이프
+                    background: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(10.0),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 4.0,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
+                      child: const Icon(
+                        Icons.delete,
+                        color: Color(0xFFD90021),
+                      ),
                     ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.all(10.0),
-                      title: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            DateFormat('yyyy-MM-dd').format(date),
-                            style: const TextStyle(fontSize: 14.0, color: Colors.grey),
-                          ),
-                          const SizedBox(height: 2.0),
-                          Text(
-                            content,
-                            style: const TextStyle(fontSize: 16.0, fontFamily: 'Hana2Bold'),
+                    confirmDismiss: (direction) async {
+                      return await showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          backgroundColor: Colors.white,
+                          title: const Text('삭제 확인'),
+                          content: const Text('이 거래 내역을 삭제하시겠습니까?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text('취소'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              child: const Text('삭제'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    onDismissed: (direction) async {
+                      // Firestore에서 해당 문서를 삭제
+                      await FirebaseFirestore.instance
+                          .collection('trade')
+                          .doc(transactionId)
+                          .delete();
+                      // 삭제 후 UI 갱신
+                      setState(() async {
+                        transactions.removeAt(index);
+                        await _updateAmounts();
+                      });
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 22.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10.0),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 4.0,
+                            offset: Offset(0, 2),
                           ),
                         ],
                       ),
-                      trailing: Text(
-                        '$amountPrefix${formatAssetValue(amount)}',  // 금액 포맷팅
-                        style: TextStyle(
-                          fontSize: 18.0,
-                          fontFamily: 'Hana2Bold',
-                          color: amountColor, // 금액의 색상 설정
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.all(10.0),
+                        title: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              DateFormat('yyyy-MM-dd').format(date),
+                              style: const TextStyle(fontSize: 14.0, color: Colors.grey),
+                            ),
+                            const SizedBox(height: 2.0),
+                            Text(
+                              content,
+                              style: const TextStyle(fontSize: 16.0, fontFamily: 'Hana2Bold'),
+                            ),
+                          ],
+                        ),
+                        trailing: Text(
+                          '$amountPrefix${formatAssetValue(amount)}', // 금액 포맷팅
+                          style: TextStyle(
+                            fontSize: 18.0,
+                            fontFamily: 'Hana2Bold',
+                            color: amountColor, // 금액의 색상 설정
+                          ),
                         ),
                       ),
                     ),
@@ -303,9 +388,12 @@ class MainPageState extends State<MainPage> {
       home: Scaffold(
         appBar: AppBar(
           scrolledUnderElevation: 0,
-          title: const Text(
-            '작심소비',
-            style: TextStyle(fontSize: 20, fontFamily: 'Hana2Medium'),
+          title: GestureDetector(
+            onTap: () => _selectDate(context), // 앱바의 날짜를 탭하면 선택 가능
+            child: Text(
+              selectedMonth, // 선택된 년도와 월
+              style: const TextStyle(fontSize: 20, fontFamily: 'Hana2Medium'),
+            ),
           ),
           centerTitle: true,
           backgroundColor: Colors.white,
@@ -345,13 +433,13 @@ class MainPageState extends State<MainPage> {
                   height: 120,
                 ),
                 const SizedBox(height: 20),
+                // Text 위젯 수정
                 Text(
                   userName.isNotEmpty
-                      ? '안녕하세요, $userName님!\n지난 1개월 간의 거래 내역을\n확인해보세요.'
+                      ? '안녕하세요, $userName님!\n$selectedMonth 간의 거래 내역을\n확인해보세요.'
                       : '사용자 정보를 가져오는 중입니다...',
                   textAlign: TextAlign.center,
-                  style:
-                      const TextStyle(fontSize: 18, fontFamily: 'Hana2Regular'),
+                  style: const TextStyle(fontSize: 18, fontFamily: 'Hana2Regular'),
                 ),
                 const SizedBox(height: 20),
                 // 애니메이션 적용된 자산 값 출력
