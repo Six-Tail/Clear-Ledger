@@ -13,7 +13,7 @@ import 'package:clear_ledger/pages/utils/logout.dart';
 import 'package:clear_ledger/pages/widgets/menu_widget.dart';
 
 import 'add_transaction_form.dart';
-import 'edit_page.dart'; // MenuWidget을 import합니다.
+import 'edit/edit_page.dart'; // MenuWidget을 import합니다.
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
