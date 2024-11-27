@@ -12,7 +12,8 @@ import 'package:clear_ledger/pages/widgets/income_expense_box.dart';
 import 'package:clear_ledger/pages/utils/logout.dart';
 import 'package:clear_ledger/pages/widgets/menu_widget.dart';
 
-import 'add_transaction_form.dart'; // MenuWidget을 import합니다.
+import 'add_transaction_form.dart';
+import 'edit_page.dart'; // MenuWidget을 import합니다.
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -244,15 +245,39 @@ class MainPageState extends State<MainPage> {
           centerTitle: true,
           backgroundColor: Colors.white,
           actions: [
-            IconButton(
-              icon: const Icon(
-                FontAwesomeIcons.bars,
-                color: Colors.grey,
+            Theme(
+              data: Theme.of(context).copyWith(
+                popupMenuTheme: const PopupMenuThemeData(
+                  color: Colors.white, // 팝업 메뉴 배경색 하얀색으로 설정
+                ),
               ),
-              onPressed: () {
-                Logout logout = Logout();
-                logout.showLogoutDialog(context);
-              },
+              child: PopupMenuButton(
+                icon: const Icon(
+                  FontAwesomeIcons.bars,
+                  color: Colors.grey,
+                ),
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => EditPage()),
+                    );
+                  } else if (value == 'logout') {
+                    Logout logout = Logout();
+                    logout.showLogoutDialog(context);
+                  }
+                },
+                itemBuilder: (BuildContext context) => [
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Text('정보 수정'),
+                  ),
+                  const PopupMenuItem(
+                    value: 'logout',
+                    child: Text('로그아웃'),
+                  ),
+                ],
+              ),
             )
           ],
           bottom: PreferredSize(
