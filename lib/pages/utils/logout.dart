@@ -91,37 +91,80 @@ class Logout {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15.0),
+          ),
           backgroundColor: Colors.white,
-          title: const Text('로그아웃'),
-          content: const Text('로그아웃 하시겠습니까?'),
+          contentPadding: const EdgeInsets.all(20.0),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.logout_rounded,
+                size: 50.0,
+                color: Color(0xFFD90021),
+              ),
+              const SizedBox(height: 20.0),
+              const Text(
+                '로그아웃',
+                style: TextStyle(
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 10.0),
+              Text(
+                '로그아웃 하시겠습니까?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16.0,
+                  color: Colors.grey[700],
+                ),
+              ),
+            ],
+          ),
           actions: [
             TextButton(
-              child: const Text('예', style: TextStyle(color: Colors.red)),
+              child: const Text(
+                '아니오',
+                style: TextStyle(
+                  color: Color(0xFF39A063),
+                  fontSize: 16.0,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop(); // 다이얼로그 닫기
+              },
+            ),
+            TextButton(
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 10.0,
+                  horizontal: 20.0,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+              ),
               onPressed: () async {
                 Navigator.of(context).pop(); // 다이얼로그 닫기
                 await signOut(); // 로그아웃 함수 호출
               },
-            ),
-            TextButton(
-              child: const Text('아니오', style: TextStyle(color: Colors.black)),
-              onPressed: () {
-                Navigator.of(context).pop(); // 다이얼로그 닫기
-              },
+              child: const Text(
+                '예',
+                style: TextStyle(
+                  color: Color(0xFFD90021),
+                  fontSize: 16.0,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );
       },
     );
   }
-}
 
-// ListTile(
-//  title: const Text('로그아웃'),
-//  trailing: const Icon(Icons.chevron_right),
-//  leading: const Icon(Icons.logout),
-//  onTap: () {
-//    // Logout을 사용하여 로그아웃 다이얼로그 표시
-//    Logout logout = Logout();
-//    logout.showLogoutDialog(context);
-//  },
-// ),
+}
