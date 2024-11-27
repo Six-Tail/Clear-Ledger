@@ -1,5 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'editname_page.dart'; // editname_page 추가
 import '../../services/user_service.dart';
 
 class EditPage extends StatefulWidget {
@@ -8,7 +8,7 @@ class EditPage extends StatefulWidget {
 }
 
 class _EditPageState extends State<EditPage> {
-  final TextEditingController _nameController = TextEditingController();
+  String _userName = '닉네임 불러오는 중...'; // 초기 닉네임
   final UserService _userService = UserService();
 
   @override
@@ -21,48 +21,61 @@ class _EditPageState extends State<EditPage> {
     String? userName = await _userService.fetchUserName();
     if (userName != null) {
       setState(() {
-        _nameController.text = userName; // 사용자 이름을 텍스트 필드에 설정
+        _userName = userName; // 사용자 닉네임 설정
       });
     }
   }
 
-  Future<void> _saveUserName() async {
-    String newName = _nameController.text;
-    User? user = _userService.auth.currentUser;
-    if (user != null) {
-      await _userService.saveUserToFirestore(
-        user.uid,
-        newName,
-        null,
-        null,
-        'user', // 임의의 accountType 값
-      );
+  Future<void> _navigateToEditNamePage() async {
+    String? updatedName = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditNicknameScreen(currentName: _userName),
+      ),
+    );
+
+    if (updatedName != null) {
+      setState(() {
+        _userName = updatedName; // 업데이트된 닉네임 설정
+      });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('이름이 성공적으로 저장되었습니다.')),
+        SnackBar(content: Text('닉네임이 업데이트되었습니다: $updatedName')),
       );
-      Navigator.pop(context); // 수정 후 이전 화면으로 돌아가기
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('정보 수정'),
+        backgroundColor: Colors.white,
+        title: const Text('정보 수정'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(labelText: '이름 수정'),
+            GestureDetector(
+              onTap: _navigateToEditNamePage, // 터치 시 이름 수정 페이지로 이동
+              child: Row(
+                children: [
+                  const Text(
+                    '이름: ',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    _userName,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      color: Colors.blue,
+                      decoration: TextDecoration.underline, // 밑줄 추가
+                    ),
+                  ),
+                ],
+              ),
             ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _saveUserName,
-              child: Text('저장하기'),
-            ),
+            const SizedBox(height: 20),
           ],
         ),
       ),

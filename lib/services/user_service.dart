@@ -10,7 +10,7 @@ class UserService {
   Future<Map<String, dynamic>?> getUserInfo(String uid) async {
     try {
       DocumentSnapshot userDoc =
-          await firestore.collection('users').doc(uid).get();
+      await firestore.collection('users').doc(uid).get();
       return userDoc.exists ? userDoc.data() as Map<String, dynamic>? : null;
     } catch (e) {
       if (kDebugMode) {
@@ -20,13 +20,24 @@ class UserService {
     }
   }
 
-  Future<void> saveUserToFirestore(
-    String uid,
-    String? name,
-    String? profileImage,
-    String? email,
-    String accountType,
-  ) async {
+  Future<void> updateUserInfo(String uid, {required String userName}) async {
+    try {
+      // Firestore의 users 컬렉션에서 사용자 UID에 해당하는 문서 업데이트
+      await firestore.collection('users').doc(uid).update({
+        'userName': userName, // userName 필드를 업데이트
+        'updatedAt': FieldValue.serverTimestamp(), // 마지막 업데이트 시간 기록
+      });
+      print("사용자 이름이 업데이트되었습니다: $userName");
+    } catch (e) {
+      print("사용자 정보 업데이트 중 오류 발생: $e");
+    }
+  }
+
+  Future<void> saveUserToFirestore(String uid,
+      String? name,
+      String? profileImage,
+      String? email,
+      String accountType,) async {
     final userRef = FirebaseFirestore.instance.collection('users').doc(uid);
 
     // Firestore에서 현재 asset 값을 가져옴
@@ -51,8 +62,8 @@ class UserService {
   }
 
   // Firestore에서 사용자 자산 값을 업데이트하는 메서드
-  Future<void> updateUserAssetValue(
-      int incomingAmount, int outcomingAmount) async {
+  Future<void> updateUserAssetValue(int incomingAmount,
+      int outcomingAmount) async {
     try {
       User? user = auth.currentUser; // 현재 로그인한 사용자 가져오기
       if (user != null) {
@@ -87,7 +98,7 @@ class UserService {
       User? user = auth.currentUser;
       if (user != null) {
         DocumentSnapshot userDoc =
-            await firestore.collection('users').doc(user.uid).get();
+        await firestore.collection('users').doc(user.uid).get();
         if (userDoc.exists) {
           return userDoc['userName'] as String;
         }
@@ -107,7 +118,7 @@ class UserService {
       User? user = auth.currentUser;
       if (user != null) {
         DocumentSnapshot userDoc =
-            await firestore.collection('users').doc(user.uid).get();
+        await firestore.collection('users').doc(user.uid).get();
         if (userDoc.exists) {
           return userDoc['asset'] as int;
         }
