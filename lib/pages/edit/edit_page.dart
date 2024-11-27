@@ -1,8 +1,11 @@
+import 'package:clear_ledger/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'editname_page.dart'; // editname_page 추가
 import '../../services/user_service.dart';
 
 class EditPage extends StatefulWidget {
+  const EditPage({super.key});
+
   @override
   _EditPageState createState() => _EditPageState();
 }
@@ -19,14 +22,16 @@ class _EditPageState extends State<EditPage> {
 
   Future<void> _loadUserName() async {
     String? userName = await _userService.fetchUserName();
-    if (userName != null) {
+    // Check if the widget is still mounted before calling setState
+    if (mounted) {
       setState(() {
-        _userName = userName; // 사용자 닉네임 설정
+        _userName = userName ?? '닉네임 불러오기 실패'; // 사용자 닉네임 설정
       });
     }
   }
 
   Future<void> _navigateToEditNamePage() async {
+    // Check if the widget is still mounted before using context
     String? updatedName = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -34,15 +39,21 @@ class _EditPageState extends State<EditPage> {
       ),
     );
 
-    if (updatedName != null) {
+    // If the widget is still mounted, update the name
+    if (mounted && updatedName != null) {
       setState(() {
         _userName = updatedName; // 업데이트된 닉네임 설정
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('닉네임이 업데이트되었습니다: $updatedName')),
+
+      // Use CustomSnackBar to show the updated message
+      CustomSnackBar(
+        context,
+        Text('닉네임이 업데이트되었습니다: $updatedName'),
+        backGroundColor: Colors.white, // Optionally change the background color
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

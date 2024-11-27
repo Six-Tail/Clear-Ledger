@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:clear_ledger/pages/login_page.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:firebase_auth/firebase_auth.dart' as firebase; // Firebase Auth에 별칭 부여
+import 'package:firebase_auth/firebase_auth.dart' as firebase;
+import 'package:get/get_navigation/src/root/get_material_app.dart'; // Firebase Auth에 별칭 부여
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,7 +29,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return const GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'ClearLedger',
       // 아래 코드를 추가

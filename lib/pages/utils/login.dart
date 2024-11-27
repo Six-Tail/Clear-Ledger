@@ -2,10 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
-import 'package:clear_ledger/services/user_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:get/get.dart';
 
+import '../../services/user_service.dart';
 import '../main_page.dart'; // Get 패키지 import
 
 // 로그인 상태를 저장하는 함수
@@ -31,8 +31,9 @@ Future<void> signInWithGoogle() async {
 
     final firebase_auth.User? user = firebase_auth.FirebaseAuth.instance.currentUser;
     if (user != null) {
-      final userService = UserService();
-      await userService.saveUserToFirestore(
+      // UserService 인스턴스를 생성하고 함수 호출
+      UserService userService = UserService();
+      await userService.saveUserToFirestoreIfNew(
         user.uid,
         user.displayName,
         user.photoURL,
@@ -47,6 +48,8 @@ Future<void> signInWithGoogle() async {
     }
   }
 }
+
+
 
 // GitHub 로그인 함수
 Future<void> signInWithGitHub() async {
@@ -63,8 +66,9 @@ Future<void> signInWithGitHub() async {
 
     final User? user = userCredential.user;
     if (user != null) {
-      final userService = UserService();
-      await userService.saveUserToFirestore(
+      // 기존 사용자인지 확인하고 새 사용자만 정보 업데이트
+      UserService userService = UserService();
+      await userService.saveUserToFirestoreIfNew(
         user.uid,
         user.displayName,
         user.photoURL,
@@ -81,6 +85,7 @@ Future<void> signInWithGitHub() async {
     }
   }
 }
+
 // 로그인 성공 후 메인 페이지로 이동
 void navigatorToMainPage() {
   Get.off(() => const MainPage());  // Get.off()을 사용하여 메인 페이지로 이동

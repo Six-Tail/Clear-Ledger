@@ -1,7 +1,10 @@
+import 'package:clear_ledger/pages/main_page.dart';
 import 'package:clear_ledger/theme.dart';
 import 'package:clear_ledger/widgets/snackbar.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:get/get.dart';
 
 import '../utils/login.dart';
 
@@ -23,6 +26,8 @@ class _SignInState extends State<SignIn> {
   final FocusNode focusNodePassword = FocusNode();
 
   bool _obscureTextPassword = true;
+  bool isEmailInvalid = false;  // 이메일 유효성 검사 상태
+  bool isPasswordInvalid = false;  // 비밀번호 유효성 검사 상태
   bool isLoginAttempt = false;
   bool isLoggedIn = false;
 
@@ -30,8 +35,73 @@ class _SignInState extends State<SignIn> {
   void dispose() {
     focusNodeEmail.dispose();
     focusNodePassword.dispose();
+    loginEmailController.dispose();
+    loginPasswordController.dispose();
     super.dispose();
   }
+
+  Future<void> _signInWithEmailAndPassword() async {
+    final email = loginEmailController.text.trim();
+    final password = loginPasswordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      if (mounted) {
+        CustomSnackBar(context, const Text("이메일과 비밀번호를 입력해주세요."));
+      }
+      return;
+    }
+
+    setState(() {
+      // 이메일과 비밀번호 유효성 검사
+      isEmailInvalid = !RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$").hasMatch(email);
+      isPasswordInvalid = password.length < 6;
+    });
+
+    if (isEmailInvalid || isPasswordInvalid) {
+      return;
+    }
+
+    try {
+      setState(() {
+        isLoginAttempt = true;
+      });
+
+      final UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password);
+
+      final user = userCredential.user;
+
+      if (user != null) {
+        Get.offAll(() => const MainPage());
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        String errorMessage;
+        switch (e.code) {
+          case 'user-not-found':
+            errorMessage = '등록된 사용자가 없습니다.';
+            break;
+          case 'wrong-password':
+            errorMessage = '비밀번호가 올바르지 않습니다.';
+            break;
+          case 'invalid-email':
+            errorMessage = '이메일 형식이 잘못되었습니다.';
+            break;
+          default:
+            errorMessage = '로그인에 실패했습니다. 다시 시도해주세요.';
+        }
+        CustomSnackBar(context, Text(errorMessage));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoginAttempt = false;
+        });
+      }
+    }
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -61,19 +131,22 @@ class _SignInState extends State<SignIn> {
                           controller: loginEmailController,
                           keyboardType: TextInputType.emailAddress,
                           style: const TextStyle(
-                              fontFamily: 'Hana2Bold',
-                              fontSize: 14.0,
-                              color: Colors.black),
-                          decoration: const InputDecoration(
+                            fontFamily: 'Hana2Bold',
+                            fontSize: 14.0,
+                            color: Colors.black,
+                          ),
+                          decoration: InputDecoration(
                             border: InputBorder.none,
                             icon: Icon(
                               FontAwesomeIcons.envelope,
-                              color: Colors.black,
+                              color: isEmailInvalid ? const Color(0xFFD90021) : Colors.black,  // 이메일이 잘못된 경우 빨간색
                               size: 22.0,
                             ),
                             hintText: '이메일 주소',
-                            hintStyle: TextStyle(
-                                fontFamily: 'Hana2Bold', fontSize: 14.0),
+                            hintStyle: const TextStyle(
+                                fontFamily: 'Hana2Bold',
+                                fontSize: 14.0
+                            ),
                           ),
                           onSubmitted: (_) {
                             focusNodePassword.requestFocus();
@@ -93,19 +166,22 @@ class _SignInState extends State<SignIn> {
                           controller: loginPasswordController,
                           obscureText: _obscureTextPassword,
                           style: const TextStyle(
-                              fontFamily: 'Hana2Bold',
-                              fontSize: 14.0,
-                              color: Colors.black),
+                            fontFamily: 'Hana2Bold',
+                            fontSize: 14.0,
+                            color: Colors.black,
+                          ),
                           decoration: InputDecoration(
                             border: InputBorder.none,
-                            icon: const Icon(
+                            icon: Icon(
                               FontAwesomeIcons.lock,
                               size: 22.0,
-                              color: Colors.black,
+                              color: isPasswordInvalid ? const Color(0xFFD90021) : Colors.black,  // 비밀번호가 잘못된 경우 빨간색
                             ),
                             hintText: '비밀번호',
                             hintStyle: const TextStyle(
-                                fontFamily: 'Hana2Bold', fontSize: 14.0),
+                                fontFamily: 'Hana2Bold',
+                                fontSize: 14.0
+                            ),
                             suffixIcon: GestureDetector(
                               onTap: _toggleLogin,
                               child: Icon(
@@ -118,7 +194,7 @@ class _SignInState extends State<SignIn> {
                             ),
                           ),
                           onSubmitted: (_) {
-                            _toggleSignInButton();
+                            _signInWithEmailAndPassword();
                           },
                           textInputAction: TextInputAction.go,
                         ),
@@ -167,8 +243,7 @@ class _SignInState extends State<SignIn> {
                             fontFamily: 'Hana2Bold'),
                       ),
                     ),
-                    onPressed: () => CustomSnackBar(
-                        context, const Text('Login Button Pressed'))),
+                    onPressed: () => _signInWithEmailAndPassword()),
               ),
             ],
           ),
@@ -318,9 +393,4 @@ class _SignInState extends State<SignIn> {
       _obscureTextPassword = !_obscureTextPassword;
     });
   }
-
-  void _toggleSignInButton() {
-    CustomSnackBar(context, const Text('Signin Button Pressed'));
-  }
-  
 }

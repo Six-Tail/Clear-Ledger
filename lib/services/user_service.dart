@@ -6,6 +6,22 @@ class UserService {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final FirebaseAuth auth = FirebaseAuth.instance;
 
+  // 사용자 정보를 Firestore에 저장하는 함수
+  Future<void> saveUserToFirestoreIfNew(String userId, String? displayName, String? photoURL, String? email, String accountType) async {
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+
+    // 만약 사용자 정보가 존재하지 않으면 새로 저장
+    if (!userDoc.exists) {
+      await FirebaseFirestore.instance.collection('users').doc(userId).set({
+        'userName': displayName ?? 'Anonymous',
+        'email': email,
+        'userImage': photoURL ?? 'https://www.default_profile_image.com',
+        'asset': 0,
+        'accountType': accountType,
+      });
+    }
+  }
+
   // 사용자 정보 가져오기
   Future<Map<String, dynamic>?> getUserInfo(String uid) async {
     try {
@@ -27,9 +43,13 @@ class UserService {
         'userName': userName, // userName 필드를 업데이트
         'updatedAt': FieldValue.serverTimestamp(), // 마지막 업데이트 시간 기록
       });
-      print("사용자 이름이 업데이트되었습니다: $userName");
+      if (kDebugMode) {
+        print("사용자 이름이 업데이트되었습니다: $userName");
+      }
     } catch (e) {
-      print("사용자 정보 업데이트 중 오류 발생: $e");
+      if (kDebugMode) {
+        print("사용자 정보 업데이트 중 오류 발생: $e");
+      }
     }
   }
 
