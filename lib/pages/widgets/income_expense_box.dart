@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-class IncomeExpenseBox extends StatelessWidget {
+class IncomeExpenseBox extends StatefulWidget {
   final int incomingAmount; // 들어온 돈
   final int outcomingAmount; // 나간 돈
 
@@ -11,6 +11,11 @@ class IncomeExpenseBox extends StatelessWidget {
     required this.outcomingAmount,
   });
 
+  @override
+  IncomeExpenseBoxState createState() => IncomeExpenseBoxState();
+}
+
+class IncomeExpenseBoxState extends State<IncomeExpenseBox> {
   // 숫자를 포맷팅하는 메서드
   String formatAssetValue(int value) {
     final formatter = NumberFormat('#,###');
@@ -41,8 +46,12 @@ class IncomeExpenseBox extends StatelessWidget {
                   style: TextStyle(fontSize: 18, fontFamily: 'Hana2Medium'),
                 ),
                 Text(
-                  formatAssetValue(incomingAmount),
-                  style: const TextStyle(fontSize: 18, color: Color(0xFF39A063), fontFamily: 'Hana2Medium'),
+                  formatAssetValue(widget.incomingAmount), // widget을 통해 값을 사용
+                  style: const TextStyle(
+                    fontSize: 18,
+                    color: Color(0xFF39A063),
+                    fontFamily: 'Hana2Medium',
+                  ),
                 ),
               ],
             ),
@@ -66,7 +75,7 @@ class IncomeExpenseBox extends StatelessWidget {
                   style: TextStyle(fontSize: 18, fontFamily: 'Hana2Medium'),
                 ),
                 Text(
-                  '-${formatAssetValue(outcomingAmount)}', // 마이너스 기호 추가
+                  '-${formatAssetValue(widget.outcomingAmount)}', // widget을 통해 값을 사용
                   style: const TextStyle(
                     fontSize: 18,
                     color: Color(0xFFD90021),

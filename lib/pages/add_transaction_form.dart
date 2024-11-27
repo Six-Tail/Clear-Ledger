@@ -26,6 +26,15 @@ class _AddTransactionFormState extends State<AddTransactionForm> {
   final TextEditingController dayController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
 
+  // 천 단위로 쉼표 추가하는 함수
+  String formatAmountWithComma(String amount) {
+    if (amount.isEmpty) {
+      return '';
+    }
+    int value = int.tryParse(amount.replaceAll(',', '')) ?? 0;
+    return value.toString().replaceAll(RegExp(r'(?<=\d)(?=(\d{3})+(?!\d))'), ',');
+  }
+
   // 윤년 체크 함수
   bool isLeapYear(int year) {
     return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
@@ -69,7 +78,7 @@ class _AddTransactionFormState extends State<AddTransactionForm> {
       final month = int.tryParse(monthController.text) ?? 0;
       final day = int.tryParse(dayController.text) ?? 0;
       final content = contentController.text;
-      final amount = int.tryParse(amountController.text) ?? 0;
+      final amount = int.tryParse(amountController.text.replaceAll(',', '')) ?? 0; // 쉼표 제거하고 금액 사용
       final transactionType = selectedTransactionType;
 
       // 현재 사용자 정보 가져오기
@@ -376,45 +385,48 @@ class _AddTransactionFormState extends State<AddTransactionForm> {
             ),
           ),
           const SizedBox(height: 10),
-          Row(
-            children: [
-              Flexible(
-                child: TextField(
-                  keyboardType: TextInputType.number,
-                  controller: amountController,
-                  decoration: InputDecoration(
-                    hintText: '금액을 입력하세요(예: 12000)',
-                    border: OutlineInputBorder(
-                      borderSide: const BorderSide(
-                        color: Colors.grey,
-                        width: 1.0,
-                      ),
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(
-                        color: Colors.grey,
-                        width: 1.0,
-                      ),
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(
-                        color: Colors.grey,
-                        width: 1.0,
-                      ),
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[200],
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(50),
-                  ],
+          TextField(
+            keyboardType: TextInputType.number,
+            controller: amountController,
+            decoration: InputDecoration(
+              hintText: '금액을 입력하세요',
+              border: OutlineInputBorder(
+                borderSide: const BorderSide(
+                  color: Colors.grey,
+                  width: 1.0,
                 ),
+                borderRadius: BorderRadius.circular(10.0),
               ),
+              enabledBorder: OutlineInputBorder(
+                borderSide: const BorderSide(
+                  color: Colors.grey,
+                  width: 1.0,
+                ),
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: const BorderSide(
+                  color: Colors.grey,
+                  width: 1.0,
+                ),
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+              filled: true,
+              fillColor: Colors.grey[200],
+              // 입력된 금액에 쉼표 추가
+              suffixText: formatAmountWithComma(amountController.text),
+              suffixStyle: const TextStyle(
+                fontSize: 14,
+                color: Colors.black54,
+              ),
+            ),
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(50),
             ],
+            onChanged: (text) {
+              setState(() {}); // 금액이 변경될 때마다 UI를 갱신
+            },
           ),
           const SizedBox(height: 20),
           Align(

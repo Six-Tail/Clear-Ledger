@@ -3,6 +3,7 @@ import 'package:clear_ledger/pages/widgets/transactions_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
@@ -23,6 +24,16 @@ class MainPage extends StatefulWidget {
 }
 
 class MainPageState extends State<MainPage> {
+  final UserService _userService = UserService();
+  final ScrollController _scrollController = ScrollController();
+
+  int asset = 0;
+  int incomingAmount = 0; // 들어온 돈
+  int outcomingAmount = 0; // 나간 돈
+  int selectedIndex = 0;
+
+  bool _isAddingTransaction = false;
+
   String userName = '';
   String selectedMonth =
       DateFormat('yyyy년 MM월').format(DateTime.now()); // 현재 년도와 월
@@ -47,6 +58,10 @@ class MainPageState extends State<MainPage> {
               setState(() {
                 selectedDate = DateTime(newDate.year, newDate.month, 1); // 1일로 설정
                 selectedMonth = getFormattedDate(selectedDate); // 월 및 년도 포맷
+                // 날짜 선택 후 자산 값을 업데이트
+                _updateAmounts();
+                // Firebase에 자산 값 업데이트
+                _userService.updateUserAssetValue(incomingAmount, outcomingAmount);
               });
             },
             minimumDate: DateTime(2020),
@@ -56,7 +71,6 @@ class MainPageState extends State<MainPage> {
       },
     );
 
-    // picked 값 처리
     if (picked != null && picked != selectedDate) {
       setState(() {
         selectedDate = DateTime(picked.year, picked.month, 1);
@@ -65,17 +79,61 @@ class MainPageState extends State<MainPage> {
     }
   }
 
-  final UserService _userService = UserService();
+  Future<void> _updateAmounts() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
-  int asset = 0;
-  int incomingAmount = 0; // 들어온 돈
-  int outcomingAmount = 0; // 나간 돈
-  int selectedIndex = 0;
+    // 선택한 달의 시작일과 마지막 일을 계산
+    final startOfMonth = DateTime(selectedDate.year, selectedDate.month, 1);
+    final endOfMonth = DateTime(selectedDate.year, selectedDate.month + 1, 1)
+        .subtract(const Duration(days: 1));
 
-  bool _isAddingTransaction = false;
+    try {
+      final transactionsSnapshot = await FirebaseFirestore.instance
+          .collection('trade')
+          .where('userId', isEqualTo: user.uid)
+          .where('date', isGreaterThanOrEqualTo: startOfMonth)
+          .where('date', isLessThanOrEqualTo: endOfMonth)
+          .get();
 
-  final ScrollController _scrollController =
-      ScrollController(); // ScrollController 추가
+      int incomeSum = 0;
+      int expenseSum = 0;
+
+      if (transactionsSnapshot.docs.isEmpty) {
+        if (kDebugMode) {
+          print("No transactions found for the selected date range.");
+        }
+      }
+
+      for (var doc in transactionsSnapshot.docs) {
+        final type = doc['type'];
+        final amount = doc['amount'] as int;
+
+        if (type == 'income') {
+          incomeSum += amount;
+        } else if (type == 'expense') {
+          expenseSum += amount;
+        }
+      }
+
+      // 자산 값 갱신 및 화면 새로 고침
+      setState(() {
+        incomingAmount = incomeSum; // 수입 금액 업데이트
+        outcomingAmount = expenseSum; // 지출 금액 업데이트
+        asset = incomingAmount - outcomingAmount; // 자산 계산
+      });
+
+      if (kDebugMode) {
+        print('수입 금액: $incomingAmount');
+        print('지출 금액: $outcomingAmount');
+        print('현재 자산: $asset');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error while fetching transactions: $e");
+      }
+    }
+  }
 
   void _addTransaction() {
     setState(() {
@@ -150,47 +208,6 @@ class MainPageState extends State<MainPage> {
     setState(() {
       selectedIndex = index;
     });
-  }
-
-  // _updateAmounts 함수 수정
-  Future<void> _updateAmounts() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    final oneMonthAgo = getOneMonthAgo();
-
-    final transactionsSnapshot = await FirebaseFirestore.instance
-        .collection('trade')
-        .where('userId', isEqualTo: user.uid)
-        .where('date', isGreaterThanOrEqualTo: oneMonthAgo)
-        .get();
-
-    int incomeSum = 0;
-    int expenseSum = 0;
-
-    for (var doc in transactionsSnapshot.docs) {
-      final type = doc['type'];
-      final amount = doc['amount'] as int;
-
-      if (type == 'income') {
-        incomeSum += amount;
-      } else if (type == 'expense') {
-        expenseSum += amount;
-      }
-    }
-
-    setState(() {
-      incomingAmount = incomeSum; // 수입 금액 업데이트
-      outcomingAmount = expenseSum; // 지출 금액 업데이트
-      asset = incomingAmount - outcomingAmount; // 자산 계산
-    });
-  }
-
-  // 1개월 전의 날짜를 계산하는 함수
-  DateTime getOneMonthAgo() {
-    final now = DateTime.now();
-    final oneMonthAgo = now.subtract(const Duration(days: 30)); // 1개월 전 날짜
-    return oneMonthAgo;
   }
 
   // 거래 추가 후 자산 갱신
