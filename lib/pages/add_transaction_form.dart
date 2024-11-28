@@ -308,7 +308,7 @@ class _AddTransactionFormState extends State<AddTransactionForm> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: selectedTransactionType == 'expense'
-                        ? Colors.red
+                        ? const Color(0xFFD90021)
                         : Colors.white,
                     foregroundColor: selectedTransactionType == 'expense'
                         ? Colors.white
@@ -319,7 +319,7 @@ class _AddTransactionFormState extends State<AddTransactionForm> {
                       borderRadius: BorderRadius.circular(10.0),
                       side: BorderSide(
                         color: selectedTransactionType == 'expense'
-                            ? Colors.red
+                            ? const Color(0xFFD90021)
                             : Colors.grey,
                         width: 1.0,
                       ),

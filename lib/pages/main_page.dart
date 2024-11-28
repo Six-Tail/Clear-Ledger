@@ -1,4 +1,5 @@
 import 'package:clear_ledger/pages/widgets/add_transaction_widget.dart';
+import 'package:clear_ledger/pages/widgets/monthly_expense_comparison.dart';
 import 'package:clear_ledger/pages/widgets/transactions_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -77,6 +78,16 @@ class MainPageState extends State<MainPage> {
         selectedMonth = getFormattedDate(selectedDate);
       });
     }
+  }
+
+  String getPreviousMonthLabel() {
+    final previousMonthDate = DateTime(selectedDate.year, selectedDate.month - 1, 1);
+    return DateFormat('yyyy년 MM월 총 지출').format(previousMonthDate);
+  }
+
+  String getPresentMonthLabel() {
+    final presentMonthDate = DateTime(selectedDate.year, selectedDate.month, 1);
+    return DateFormat('yyyy년 MM월 총 지출').format(presentMonthDate);
   }
 
   Future<void> _updateAmounts() async {
@@ -159,7 +170,7 @@ class MainPageState extends State<MainPage> {
       // 화면 렌더링 후 스크롤을 끝으로 이동
       Future.delayed(const Duration(milliseconds: 100), () {
         if (_scrollController.hasClients) {
-          // ScrollController가 연결된 경우에만
+          // ScrollController 연결된 경우에만
           _scrollToTop();
         }
       });
@@ -277,24 +288,19 @@ class MainPageState extends State<MainPage> {
                   if (value == 'edit') {
                     final updatedName = await Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => EditPage()),
+                      MaterialPageRoute(builder: (context) => const EditPage()),
                     );
-
                     // 수정된 닉네임이 반환되었을 때만 업데이트
                     if (updatedName != null && updatedName is String) {
                       setState(() {
                         userName = updatedName;
                       });
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('닉네임이 업데이트되었습니다: $updatedName')),
-                      );
                     }
                   } else if (value == 'logout') {
                     Logout logout = Logout();
                     logout.showLogoutDialog(context);
                   }
-                }
-,
+                },
                 itemBuilder: (BuildContext context) => [
                   const PopupMenuItem(
                     value: 'edit',
@@ -363,6 +369,14 @@ class MainPageState extends State<MainPage> {
                   outcomingAmount: outcomingAmount,
                 ),
                 const SizedBox(height: 30),
+                const Divider(
+                    height: 2, thickness: 10, color: Color(0xFFD3D4D7)),
+                MonthlyExpenseComparison(
+                  previousMonthExpenseLabel: getPreviousMonthLabel(),
+                  presentMonthExpenseLabel: getPresentMonthLabel(),
+                  selectedDate: selectedDate,
+                ),
+                const SizedBox(height: 10),
                 const Divider(
                     height: 2, thickness: 10, color: Color(0xFFD3D4D7)),
                 const SizedBox(height: 20),

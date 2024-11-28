@@ -13,6 +13,7 @@ class _EditPageState extends State<EditPage> {
   final TextEditingController _nicknameController = TextEditingController();
   final UserService _userService = UserService();
   final User? _firebaseUser = FirebaseAuth.instance.currentUser;
+  final FocusNode _focusNode = FocusNode(); // FocusNode 추가
 
   @override
   void initState() {
@@ -36,12 +37,20 @@ class _EditPageState extends State<EditPage> {
       String newUserName = _nicknameController.text.trim();
       if (newUserName.isNotEmpty) {
         // Firestore에 사용자 이름 업데이트
-        await _userService.updateUserInfo(_firebaseUser!.uid, userName: newUserName);
+        await _userService.updateUserInfo(_firebaseUser.uid, userName: newUserName);
 
         // 닉네임 저장 후 화면 닫기 및 데이터 반환
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('닉네임이 성공적으로 저장되었습니다.')),
+            const SnackBar(
+              content: Text(
+                '닉네임이 성공적으로 저장되었습니다.',
+                style: TextStyle(color: Colors.black), // 텍스트 색상
+                textAlign: TextAlign.center, // 텍스트 가운데 정렬
+              ),
+              backgroundColor: Colors.white, // 배경색
+              behavior: SnackBarBehavior.floating, // 스낵바를 떠 있는 형태로 변경 (옵션)
+            ),
           );
           Navigator.pop(context, newUserName); // 수정된 닉네임 반환
         }
@@ -84,16 +93,56 @@ class _EditPageState extends State<EditPage> {
                   // 사용자 이름 입력 필드
                   SizedBox(
                     height: 70,
-                    child: TextField(
-                      controller: _nicknameController, // 닉네임 컨트롤러 사용
-                      maxLength: 20,
-                      decoration: const InputDecoration(
-                        hintText: '사용자 이름 입력',
-                        enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(width: 4.0, color: Colors.grey),
+                    child: Container(
+                      padding: const EdgeInsets.all(2.0), // 그라데이션 테두리 두께
+                      decoration: BoxDecoration(
+                        gradient: _focusNode.hasFocus
+                            ? const LinearGradient(
+                          colors: [Color(0xFF008AB2), Color(0xFFD6FFDE)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                            : null, // 포커스가 없을 때는 그라데이션 제거
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
+                      child: TextField(
+                        controller: _nicknameController, // 닉네임 컨트롤러 사용
+                        maxLength: 20,
+                        focusNode: _focusNode,
+                        decoration: InputDecoration(
+                          filled: true, // 배경색 활성화
+                          fillColor: Colors.grey.shade100, // 배경색 지정
+                          hintText: '사용자 이름 입력',
+                          hintStyle: TextStyle(
+                            color: Colors.grey.shade600, // 힌트 텍스트 색상
+                            fontSize: 16,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 16.0,
+                            horizontal: 20.0,
+                          ), // 패딩 추가
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              width: 2.0,
+                              color: Colors.grey.shade400,
+                            ),
+                            borderRadius: BorderRadius.circular(12.0),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(
+                              width: 0, // 포커스시 기존 테두리 제거
+                              color: Colors.transparent,
+                            ),
+                            borderRadius: BorderRadius.circular(12.0),
+                          ),
+                          suffixIcon: Icon(
+                            Icons.edit,
+                            color: Colors.grey.shade600, // 아이콘 추가
+                          ),
                         ),
-                        focusedBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(width: 4.0, color: Colors.black),
+                        style: const TextStyle(
+                          color: Colors.black, // 입력 텍스트 색상
+                          fontSize: 18,
                         ),
                       ),
                     ),
@@ -102,28 +151,48 @@ class _EditPageState extends State<EditPage> {
                   // 저장 버튼
                   GestureDetector(
                     onTap: _updateUserName, // _updateUserName 호출
-                    child: Container(
+                    child: Stack(
                       alignment: Alignment.center,
-                      height: screenHeight * 0.068,
-                      width: screenWidth * 0.8,
-                      decoration: ShapeDecoration(
-                        color: Colors.greenAccent,
-                        shape: RoundedRectangleBorder(
-                          side: const BorderSide(width: 3, color: Colors.greenAccent),
-                          borderRadius: BorderRadius.circular(33),
+                      children: [
+                        // 외곽선 역할의 Container
+                        Container(
+                          height: screenHeight * 0.068 + 6, // 외곽선 두께만큼 크기 증가
+                          width: screenWidth * 0.8 + 6,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF008AB2), Color(0xFFD6FFDE)], // 같은 색으로 시작 및 종료
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(36), // 외곽선 반지름
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        '저장',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: screenHeight * 0.022,
-                          fontFamily: 'Roboto',
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.25,
+                        // 버튼 본체
+                        Container(
+                          alignment: Alignment.center,
+                          height: screenHeight * 0.068,
+                          width: screenWidth * 0.8,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF008AB2), Color(0xFFD6FFDE)], // 같은 색으로 시작 및 종료
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(33), // 내부 반지름
+                          ),
+                          child: Text(
+                            '저장',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: screenHeight * 0.022,
+                              fontFamily: 'Roboto',
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.25,
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
                 ],
