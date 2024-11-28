@@ -24,17 +24,29 @@
 	<string>????</string>
 	<key>GIDClientID</key>
     <string>207983039731-bftqg7isan2ihj13jccdimj7m7uo5n83.apps.googleusercontent.com</string>
-<key>CFBundleURLTypes</key>
-<array>
-  <dict>
-    <key>CFBundleTypeRole</key>
-    <string>Editor</string>
-    <key>CFBundleURLSchemes</key>
-    <array>
-      <string>com.googleusercontent.apps.207983039731-bftqg7isan2ihj13jccdimj7m7uo5n83</string>
-    </array>
-  </dict>
-</array>
+
+	<!-- GitHub OAuth URL scheme 추가 -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>app-1-207983039731-ios-8970b5231fbf21ea45d386</string>
+			</array>
+		</dict>
+		<!-- Google OAuth URL scheme 추가 (기존 코드 유지) -->
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.207983039731-bftqg7isan2ihj13jccdimj7m7uo5n83</string>
+			</array>
+		</dict>
+	</array>
+
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
