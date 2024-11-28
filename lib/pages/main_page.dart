@@ -82,12 +82,12 @@ class MainPageState extends State<MainPage> {
 
   String getPreviousMonthLabel() {
     final previousMonthDate = DateTime(selectedDate.year, selectedDate.month - 1, 1);
-    return DateFormat('yyyy년 MM월 총 지출').format(previousMonthDate);
+    return DateFormat('yyyy년 MM월 지출').format(previousMonthDate);
   }
 
   String getPresentMonthLabel() {
     final presentMonthDate = DateTime(selectedDate.year, selectedDate.month, 1);
-    return DateFormat('yyyy년 MM월 총 지출').format(presentMonthDate);
+    return DateFormat('yyyy년 MM월 지출').format(presentMonthDate);
   }
 
   Future<void> _updateAmounts() async {

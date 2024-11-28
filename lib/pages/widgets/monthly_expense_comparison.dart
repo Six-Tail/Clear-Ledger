@@ -14,7 +14,8 @@ class MonthlyExpenseComparison extends StatelessWidget {
   });
 
   Future<int> getPreviousMonthTotalExpense() async {
-    final previousMonth = DateTime(selectedDate.year, selectedDate.month - 1, 1);
+    final previousMonth =
+        DateTime(selectedDate.year, selectedDate.month - 1, 1);
     return await getTotalExpense(previousMonth);
   }
 
@@ -53,29 +54,45 @@ class MonthlyExpenseComparison extends StatelessWidget {
           // 카드 시작
           Card(
             color: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             elevation: 4,
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 지난달 지출
-                  _buildExpenseBox(
-                    label: previousMonthExpenseLabel,
-                    future: getPreviousMonthTotalExpense(),
-                    color: const Color(0xFF008AB2),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 이번달 지출
-                  _buildExpenseBox(
-                    label: presentMonthExpenseLabel,
-                    future: getCurrentMonthTotalExpense(),
-                    color: const Color(0xFF3E00B2),
+                  // 지난달 지출과 이번달 지출을 가로로 배치
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    // 가로로 균등하게 배치
+                    children: [
+                      // 지난달 지출
+                      _buildExpenseBox(
+                        label: previousMonthExpenseLabel,
+                        future: getPreviousMonthTotalExpense(),
+                        color: const Color(0xFF008AB2),
+                      ),
+                      // 'VS' 텍스트 추가
+                      const Padding(
+                        padding: EdgeInsets.only(top: 22.0),
+                        child: Text(
+                          'VS',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+                      // 이번달 지출
+                      _buildExpenseBox(
+                        label: presentMonthExpenseLabel,
+                        future: getCurrentMonthTotalExpense(),
+                        color: const Color(0xFF3E00B2),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 24),
-
                   // 그래프와 비교 텍스트
                   FutureBuilder<int>(
                     future: getCurrentMonthTotalExpense(),
@@ -93,7 +110,8 @@ class MonthlyExpenseComparison extends StatelessWidget {
                                 ConnectionState.waiting) {
                               return const CircularProgressIndicator();
                             } else if (previousMonthSnapshot.hasError) {
-                              return Text("Error: ${previousMonthSnapshot.error}");
+                              return Text(
+                                  "Error: ${previousMonthSnapshot.error}");
                             } else if (previousMonthSnapshot.hasData) {
                               int previousMonthExpense =
                                   previousMonthSnapshot.data ?? 0;
@@ -103,19 +121,20 @@ class MonthlyExpenseComparison extends StatelessWidget {
                               double previousMonthRatio = totalExpense == 0
                                   ? 0
                                   : (previousMonthExpense / totalExpense)
-                                  .clamp(0.0, 1.0);
+                                      .clamp(0.0, 1.0);
                               double currentMonthRatio = totalExpense == 0
                                   ? 0
                                   : (currentMonthExpense / totalExpense)
-                                  .clamp(0.0, 1.0);
+                                      .clamp(0.0, 1.0);
 
                               Widget comparisonText;
                               if (previousMonthExpense > 0) {
                                 double percentageChange =
-                                ((currentMonthExpense - previousMonthExpense) /
-                                    previousMonthExpense *
-                                    100)
-                                    .roundToDouble();
+                                    ((currentMonthExpense -
+                                                previousMonthExpense) /
+                                            previousMonthExpense *
+                                            100)
+                                        .roundToDouble();
 
                                 if (percentageChange > 0) {
                                   comparisonText = _buildComparisonText(
@@ -197,7 +216,7 @@ class MonthlyExpenseComparison extends StatelessWidget {
     required Color color,
   }) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           label,
