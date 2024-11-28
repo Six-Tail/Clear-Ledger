@@ -273,17 +273,28 @@ class MainPageState extends State<MainPage> {
                   FontAwesomeIcons.bars,
                   color: Colors.grey,
                 ),
-                onSelected: (value) {
+                onSelected: (value) async {
                   if (value == 'edit') {
-                    Navigator.push(
+                    final updatedName = await Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => EditPage()),
                     );
+
+                    // 수정된 닉네임이 반환되었을 때만 업데이트
+                    if (updatedName != null && updatedName is String) {
+                      setState(() {
+                        userName = updatedName;
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('닉네임이 업데이트되었습니다: $updatedName')),
+                      );
+                    }
                   } else if (value == 'logout') {
                     Logout logout = Logout();
                     logout.showLogoutDialog(context);
                   }
-                },
+                }
+,
                 itemBuilder: (BuildContext context) => [
                   const PopupMenuItem(
                     value: 'edit',
