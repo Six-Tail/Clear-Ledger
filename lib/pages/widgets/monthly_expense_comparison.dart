@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../services/transactions_service.dart';
 
 class MonthlyExpenseComparison extends StatelessWidget {
@@ -14,8 +15,7 @@ class MonthlyExpenseComparison extends StatelessWidget {
   });
 
   Future<int> getPreviousMonthTotalExpense() async {
-    final previousMonth =
-        DateTime(selectedDate.year, selectedDate.month - 1, 1);
+    final previousMonth = DateTime(selectedDate.year, selectedDate.month - 1, 1);
     return await getTotalExpense(previousMonth);
   }
 
@@ -146,7 +146,7 @@ class MonthlyExpenseComparison extends StatelessWidget {
                                   comparisonText = _buildComparisonText(
                                     label: '저번 달 대비 지출이 ',
                                     value: '${percentageChange.abs()}% 감소',
-                                    valueColor: const Color(0xFF39A063),
+                                    valueColor: const Color(0xFF0F00D9),
                                   );
                                 } else {
                                   comparisonText = const Text(
@@ -215,6 +215,8 @@ class MonthlyExpenseComparison extends StatelessWidget {
     required Future<int> future,
     required Color color,
   }) {
+    final formatter = NumberFormat('#,###'); // 숫자를 천단위로 포맷팅
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -238,19 +240,32 @@ class MonthlyExpenseComparison extends StatelessWidget {
               return Text("Error: ${snapshot.error}");
             } else {
               int expense = snapshot.data ?? 0;
+              String formattedExpense = formatter.format(expense);
+
+              // 숫자 길이에 따라 폰트 크기 조정
+              double fontSize = 20; // 기본 폰트 크기
+              if (formattedExpense.length > 10) {
+                fontSize = 14;
+              } else if (formattedExpense.length > 7) {
+                fontSize = 16;
+              }
+
               return Container(
                 margin: const EdgeInsets.symmetric(vertical: 8),
                 padding: const EdgeInsets.all(12),
+                height: 60, // 고정된 높이 설정
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(
-                  '₩$expense',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: color,
+                child: Center( // 텍스트를 박스 중앙에 배치
+                  child: Text(
+                    '₩$formattedExpense', // 숫자 포맷팅 적용
+                    style: TextStyle(
+                      fontSize: fontSize,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
                   ),
                 ),
               );
