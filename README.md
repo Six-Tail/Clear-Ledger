@@ -118,30 +118,30 @@
 <table>
   <tr>
     <td><b>첫 화면</b></td>
-    <td><img src="https://github.com/user-attachments/assets/17edcd3e-f419-46a0-a300-fe90c28d205d" alt="첫 화면" width="300"/></td>
-  </tr>
-  <tr>
-    <td><b>홈 화면</b></td>
-    <td><img src="https://github.com/user-attachments/assets/b9a710a2-eb4b-4155-b1f8-319bd4a33c82" alt="홈 화면" width="300"/></td>
-  </tr>
-  <tr>
-    <td><b>일정 추가 화면</b></td>
     <td>
-      <img src="https://github.com/user-attachments/assets/f82bd0a8-960e-4230-8a95-6e63b85dc657" alt="일정 추가 화면 1" width="300"/>
-      <img src="https://github.com/user-attachments/assets/104f9a1e-5e4b-4ac2-99fd-33fb47c578b3" alt="일정 추가 화면 2" width="300"/>
+      <img src="https://github.com/user-attachments/assets/485a2d0c-93bd-4173-9c68-416df0689821" alt="로그인 화면" width="200"/>
+      <img src="https://github.com/user-attachments/assets/9d5dcc90-e2dd-4344-a8ef-b5ae287fa1a8" alt="회원가입 화면" width="200"/>
     </td>
   </tr>
   <tr>
-    <td><b>게시판 화면</b></td>
-    <td><img src="https://github.com/user-attachments/assets/8037a301-cb2c-409a-8595-2b3f8da037a5" alt="게시판 화면" width="300"/></td>
+    <td><b>홈 화면</b></td>
+    <td><img src="https://github.com/user-attachments/assets/f3214f33-8060-4eb2-85aa-e9dde68e7493" alt="홈 화면" width="200"/></td>
   </tr>
   <tr>
-    <td><b>랭킹 화면</b></td>
-    <td><img src="https://github.com/user-attachments/assets/c95a46d9-a635-428d-8ac4-a8f28b8e17e9" alt="랭킹 화면" width="300"/></td>
+    <td><b>거래 내역 화면</b></td>
+    <td>
+      <img src="https://github.com/user-attachments/assets/f5287f4f-5c01-464d-883b-5a4ec4f8abcd" alt="전체 내역 화면" width="200"/>
+      <img src="https://github.com/user-attachments/assets/ccb059f1-4a68-459c-9337-b09b6ac5ad94" alt="수입 내역 화면" width="200"/>
+      <img src="https://github.com/user-attachments/assets/adaaf991-8115-4beb-8d82-fe44cda15a67" alt="지출 내역 화면" width="200"/>
+    </td>
   </tr>
   <tr>
-    <td><b>설정 화면</b></td>
-    <td><img src="https://github.com/user-attachments/assets/d4321717-ccc4-42d7-81df-ee70fe989a76" alt="설정 화면" width="300"/></td>
+    <td><b>새로운 거래 등록</b></td>
+    <td><img src="https://github.com/user-attachments/assets/d58d687e-928c-463f-b476-aec048ccca7e" alt="새로운 등록 화면" width="200"/></td>
+  </tr>
+  <tr>
+    <td><b>사용자 이름 설정 화면</b></td>
+    <td><img src="https://github.com/user-attachments/assets/81c03a44-053f-49a2-88fe-a86c122ed86a" alt="이름 설정 화면" width="200"/></td>
   </tr>
 </table>
 
